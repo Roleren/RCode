@@ -1,0 +1,119 @@
+#¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤#
+# ORFik paper script
+#¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤#
+# Analysis April/May 2020
+# Contains data from RCP-seq C11 and CHEW et al 13 Ribo-seq and RNA-seq
+
+# Analysis of test data of C11 made by Yamilla, MARCH 2020
+#devtools::document("/export/valenfs/projects/uORFome/RCode1/ORFikPipeline/")
+############################## CREATE DATA ###################################################
+library(ORFikPipeline) # Just load ORFik if you don't have this package
+plotFolder <- "/export/valenfs/projects/Hakon/ORFik_paper/"
+
+df <- read.experimentl("Val20HumMer")
+dt <- readRDS("/export/valenfs/projects/Hakon/C11/matrix.rds") # <- Create from C11 matrix script
+# Cage gtf
+txdb <- loadTxdb("/export/valenfs/projects/Hakon/C11/GRCH38.CAGE.Mammary.gtf.db")
+cage <- "/export/valenfs/projects/uORFome/DATA/CAGE/human/Mammary%20Epithelial%20Cell%2c%20donor1.CNhs11077.11273-116H4.hg38.nobarcode.ctss.bed.gz"
+# Filter
+txNames100 <- filterTranscripts(txdb, 100, 100, 100)
+rnaFilt <- dt$txNames[(dt$RNA_MRNA_FPKM > 1 & dt$SSU_LEADERS_FPKM > 55)]
+mrna <- loadRegion(txdb, "mrna", names.keep = rnaFilt)
+filter <- names(mrna) %in% txNames100
+mrna <- mrna[filter]
+t <- removeBadTxByRegion(mrna, fimport(filepath(df, type = "bedo")[4]))
+loadRegions(txdb, names.keep = names(t))
+df <- df[df$condition == "WT",]
+
+#¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤#
+# Heatmap (original & CAGE annotation)
+#¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤#
+
+outputLibs(df, type = "bedo")
+SSU <- convertToOneBasedRanges(SSU)
+# without cage
+t <- filterTranscripts(df, 70, 0, 0)
+leaders.hmm <- loadRegion(df, "leaders", t)
+leaders.hmm <- leaders.hmm[startSites(leaders.hmm, keep.names = FALSE, is.sorted = TRUE) > 52]
+cov <- windowPerReadLength(leaders.hmm, extendLeaders(loadRegion(df, "mrna", t), extension = 51), SSU, upstream = 30, downstream = 30,
+                           scoring = "transcriptNormalized", acceptedLengths = 21:75)
+hm <- coverageHeatMap(cov, scoring = "transcriptNormalized", addFracPlot = TRUE)
+# With cage
+t.cage <- filterTranscripts(txdb, 70, 0, 0)
+cov.cage <- windowPerReadLength(loadRegion(txdb, "leaders", t.cage), extendLeaders(loadRegion(txdb, "mrna", t.cage), 31), SSU, upstream = 30, downstream = 30,
+                                scoring = "transcriptNormalized", acceptedLengths = 21:75)
+hm.cage <- coverageHeatMap(cov.cage, scoring = "transcriptNormalized", addFracPlot = TRUE)
+
+
+#¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤#
+# Metacoverage, IR & TOP motif
+#¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤#
+
+# 1 Metacoverage
+remove.experiments(df)
+outputLibs(df, type = "default")
+metaLSU <- ORFik:::splitIn3Tx(leaders, cds, trailers, LSU, fraction = "LSU")
+metaSSU <- ORFik:::splitIn3Tx(leaders, cds, trailers, SSU, fraction = "SSU")
+
+coveragePlot <- windowCoveragePlot(rbindlist(list(metaLSU, metaSSU)), colors = c('orange', 'skyblue4'))
+remove.experiments(df)
+#¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤#
+# Kozak heatmap (IR)
+#¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤#
+
+seqs <- startRegionString(cds, tx = mrna, faFile = df, upstream = 5, downstream = 4)
+kozakHeat <- kozakHeatmap(seqs = seqs, rate = dt[txNames %in% names(seqs)]$IR,
+                          start = 1, stop = max(nchar(seqs)), center = 6, type = "IR");kozakHeat
+ggslackR()
+ggsave(filename = p(plotFolder, "kozakHeatmap.png"), kozakHeat)
+#¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤#
+# TOP motif (Effect on SE FPKM)
+#¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤#
+
+
+leadersCage <- reassignTSSbyCage(loadRegion(df,"leaders", names.keep = dt$txNames), cage)
+
+seqs <- startRegionString(leadersCage, NULL, df, 0, 4)
+rate <- dt$SE
+
+comb <- TOP.Motif.ecdf(seqs, rate, legend.position.1st = c(0.70, 0.28), legend.position.motif = c(0.70, 0.28))
+ggslackR(plot = comb)
+
+#¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤#
+# Correlation plot (SE vs TE)
+#¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤#
+dtt <- dt[TE > 0 & SE > 0, .(TE, SE)]
+gg <- ggplot(data = dtt, aes(x = log2(SE), y = log2(TE), alpha = 0.5)) +
+  geom_point(color = "blue2")
+ggslackR(gg)
+gg <- GGally::ggpairs(log2(dtt))
+ggslackR(gg)
+gg <- GGally::ggpairs(dtt)
+ggslackR(gg)
+
+#¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤#
+# Chew et al (Ribo-seq) & (RNA-seq)
+#¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤#
+
+
+
+#¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤#
+# pshifting
+#¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤#
+df.rfp  <- read.experimentl("zf_Chew13")
+conditions <- c("", NA) # Only empty conditions allowed (no mutants etc.)
+stages <- c("Dome","Shield", "2to4Cell", "fertilized") # 3 stages (we make 2to4 and fertilzed as 1 stage)
+df.rfp <- df.rfp[df.rfp$stage %in% stages & df.rfp$condition %in% conditions,]
+
+
+
+#¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤#
+# Merge
+#¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤#
+library(gridExtra)
+lay <- rbind(c(1,1),
+             c(2,3),
+             c(4, 5))
+
+final <- grid.arrange(coveragePlot ,hm, hm.cage, kozakHeat, comb, layout_matrix = lay)
+ggsave(p(plotFolder, "Figure 2.png"), plot = final, width = 10, height = 11)

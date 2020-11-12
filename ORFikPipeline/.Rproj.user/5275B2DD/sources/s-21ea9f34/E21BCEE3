@@ -1,0 +1,25 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1585128326457.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "E21BCEE3",
+    "lastKnownWriteTime" : 1589201903,
+    "last_content_update" : 1589201903117,
+    "path" : "/export/valenfs/projects/uORFome/RCode1/ORFikPipeline/R/tcp_pipeline.R",
+    "project_path" : "R/tcp_pipeline.R",
+    "properties" : {
+        "cursorPosition" : "45,26",
+        "scrollLine" : "0"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 2,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

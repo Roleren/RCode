@@ -1,0 +1,92 @@
+#¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤#
+# INFO
+#¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤#
+# Analysis data of Ribo-seq made by Preeti, May 2020
+rm(list=ls())
+library(ORFikPipeline)
+
+df.rfp <- read.experimentl("Preeti_RFP")
+df.rna <- read.experimentl("Preeti_RNA")
+#devtools::document(pkg = "/export/valenfs/projects/uORFome/RCode1/ORFikPipeline/")
+
+rfp <- countTable(df.rfp, region = "cds", type = "summarized")
+rna <- countTable(df.rna, region = "cds", type = "summarized")
+GGally::ggpairs(data.table(assay(rfp), assay(rna)))
+#¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤#
+# Translational efficiency
+#¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤#
+
+rfp2 <- countTable(df.rfp, region = "cds", type = "fpkm", collapse = F)
+rna2 <- countTable(df.rna, region = "cds", type = "fpkm", collapse = F)
+
+te <- log2(rfp2 + 0.0001) - log2(rna2 + 0.0001)
+valid <- (rowSums(te) > 0) & (rowMeans(rna2) > 1) & (rowMeans(rfp2) > 1) & (rowSums(assay(rna)) > 5) & (rowSums(assay(rfp)) > 5)
+te <- te[valid,]; nrow(te)
+summary(te)
+sum(((rowMeans(te[,c(1)]))*1.5 + 0.5) < te$RFP_WT)
+sum(te$RFP_NMDA < te$RFP_DHPG)
+sum(te$RFP_NMDA < te$RFP_WT)
+sum(((rowMeans(te[,c(2)]))*1.5 + 0.5) < te$RFP_WT)
+sum(((rowMeans(te[,c(1,2)]))*1.1 + 0.5) < te$RFP_WT)
+
+melt <- melt(te)
+melt$variable <- gsub("RFP_", "", melt$variable);#melt$variable <- gsub("_r2", "", melt$variable)
+ggplot(melt, aes(x = variable, y = value)) +
+  geom_violin(aes(fill = variable)) +
+  geom_boxplot(alpha = 0.5) +
+  coord_cartesian(ylim = c(-1, 5)) +
+  ylab("log2 TE (filtered on FPKM and counts)")
+
+gg <- GGally::ggpairs(data.table(log2(rfp2 + 0.0001), log2(rna2 + 0.0001)))
+ggsave("/export/valenfs/projects/uORFome/RCode1/Preeti_Riboseq/cor_plots_all_fpkm_log2.png", gg, width = 15, height = 15)
+GGally::ggpairs(data.table(assay(rfp), assay(rna)))
+te$diffToWT <- rowMeans(te[,c(1,2)]) - te$RFP_WT
+te$tx <- rownames(rfp)
+te <- te[order(diffToWT, decreasing = TRUE),]
+
+
+#¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤#
+# FOLD change: using anota algorithm (analysis of translational activity ), not Translation efficiency!
+# DESeq is affect by spurious correlations.
+# https://academic.oup.com/nar/article/47/12/e70/5423604
+#¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤#
+library(anota2seq)
+
+# Prepare experiment as anota2seq input
+merged <- SummarizedExperiment(assays = cbind(assay(rfp), assay(rna)),
+                               colData = rbind(colData(rfp), colData(rna)))
+colData(merged) <- cbind(RNA = c(rep("P", nrow(colData(rfp))), rep("T", nrow(colData(rna)))), colData(merged))
+colData(merged) <- cbind(colData(merged), treatment = gsub("RFP_|RNA_", "", colData(merged)$SAMPLE))
+colData(merged) <- cbind(colData(merged), samplePairs = paste0(colData(merged)$treatment, colData(merged)$replicate))
+colData(merged) <- cbind(colData(merged), batch = paste0(colData(merged)$replicate))
+rownames(colData(merged)) <- c(rownames(colData(rfp)), rownames(colData(rna)))
+
+a <- anota2seqDataSetFromSE(merged, dataType = "RNAseq", normalize = TRUE)
+# run Fold change analysis
+rows <- length(unique(colData(merged)$treatment))
+contrasts <- matrix(0, nrow = rows, ncol = rows - 1)
+rownames(contrasts) <- sort(unique(colData(merged)$treatment))
+# 3 experiment setups (WT vs DHPG, WT vs NMDA and WT vs DHPG & NMDA)
+# DHPG vs WT and NMDA
+contrasts[,1] <- c(1, -1, 0); contrasts[,2] <- c(2, -1, -1)
+ads <- anota2seqRun(a, contrasts, onlyGroup = TRUE, thresholds = list(minEff = 1.5, maxPAdj = 0.05),
+                    performQC = FALSE, performROT = FALSE, useRVM = TRUE)
+anota2seqPlotFC(ads, selContrast = 1, plotToFile = FALSE, contrastName = "DHPG vs NMDA")
+anota2seqPlotFC(ads, selContrast = 2, plotToFile = FALSE, contrastName = "DHPG vs NMDA & WT")
+
+# WT vs NMDA
+contrasts[,1] <- c(0, -1, 1); contrasts[,2] <- c(-1, -1, 2)
+adsNMDA <- anota2seqRun(a, contrasts, onlyGroup = TRUE, thresholds = list(minEff = 1.5),
+                        performQC = FALSE, performROT = FALSE, useRVM = TRUE)
+anota2seqPlotFC(adsNMDA, selContrast = 1, plotToFile = FALSE, contrastName = "WT vs NMDA")
+anota2seqPlotFC(adsNMDA, selContrast = 2, plotToFile = FALSE, contrastName = "WT vs NMDA & DHPG")
+
+aa <- anota2seqGetOutput(ads, selContrast = 1, output = "full", analysis = "translation")
+aa <- aa[order(aa[,"apvRvmPAdj"], decreasing = F),]
+head(aa, 8)
+assay(rfp[rownames(rfp) %in% rownames(head(aa, 8)),]) / assay(rna[rownames(rfp) %in% rownames(head(aa, 8)),])
+assay(rfp[rownames(rfp) %in% rownames(head(aa, 8)),])
+assay(rna[rownames(rfp) %in% rownames(head(aa, 8)),])
+
+
+

@@ -1,0 +1,25 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1591475124596.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "EC6FC076",
+    "lastKnownWriteTime" : 1591792368,
+    "last_content_update" : 1591792368326,
+    "path" : "/export/valenfs/projects/uORFome/RCode1/ORFikPipeline/R/STAR.R",
+    "project_path" : "R/STAR.R",
+    "properties" : {
+        "cursorPosition" : "138,2",
+        "scrollLine" : "122"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 1,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

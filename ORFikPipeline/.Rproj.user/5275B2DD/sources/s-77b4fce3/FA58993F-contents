@@ -1,0 +1,35 @@
+#¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤#
+# INFO
+#¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤#
+# Pre-Analysis data of Ribo-seq made by Preeti, May 2020
+
+############################## CREATE DATA ###################################################
+library(ORFikPipeline)
+
+#¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤#
+# Download annotation
+#¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤#
+biomartr::getGTF(db = "ensembl", "Rattus norvegicus", path = "/export/valenfs/data/references/Rnor_6.0_rat/ensemble_Rnor_6.0")
+biomartr::getGenome(db = "ensembl", "Rattus norvegicus", path = "/export/valenfs/data/references/Rnor_6.0_rat/ensemble_Rnor_6.0")
+# NCODE, phix and (tRNA scan, dropped) also downloaded
+# Now do alignment
+
+
+
+# When finished create experiment
+create.experimentl(exper = "Preeti_RFP",
+                   dir = "/export/valenfs/data/processed_data/Ribo-seq/Preeti_Jain_2020_Rattus_norvegicus/aligned",
+                   txdb = "/export/valenfs/data/references/Rnor_6.0_rat/Rnor_6.0_genomic_ensembl.gtf.db",
+                   fa = "/export/valenfs/data/references/Rnor_6.0_rat/Rnor_6.0.dna.toplevel.fa")
+# I now fixed columns manually in Libre office
+
+# Create index and txdb object
+df <- read.experimentl("Preeti_RFP")
+indexFa(df@fafile)
+txdb <- loadTxdb(df)
+saveDb(txdb, paste0(df@txdb, ".db"))
+rm(list=ls())
+
+# QC report
+df <- read.experimentl("Preeti_RFP")
+ORFik::ORFikQC(df)

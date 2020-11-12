@@ -1,0 +1,27 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1591477189990.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "2892342394",
+    "id" : "A77749AB",
+    "lastKnownWriteTime" : 1591800208,
+    "last_content_update" : 1591800208586,
+    "path" : "/export/valenfs/projects/uORFome/RCode1/Preeti_Riboseq/Pre_analysis.R",
+    "project_path" : null,
+    "properties" : {
+        "cursorPosition" : "28,79",
+        "scrollLine" : "19",
+        "source_window_id" : "",
+        "tempName" : "Untitled1"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 2,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

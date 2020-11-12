@@ -1,0 +1,26 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1589527797507.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "D803A818",
+    "lastKnownWriteTime" : 1589271181,
+    "last_content_update" : 1589271181,
+    "path" : "/export/valenfs/projects/Hakon/ORFik_paper/Timings.R",
+    "project_path" : null,
+    "properties" : {
+        "cursorPosition" : "27,0",
+        "scrollLine" : "2",
+        "tempName" : "Untitled1"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 2,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

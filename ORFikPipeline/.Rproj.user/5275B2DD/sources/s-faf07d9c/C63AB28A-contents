@@ -1,0 +1,105 @@
+#¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤#
+# INFO
+#¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤#
+# Pre-Analysis data of Ribo-seq made by Preeti, May 2020
+library(ORFikPipeline)
+
+#¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤#
+# Download annotation (Rnor 6.0)
+#¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤#
+
+annotations <- getGenomeAndFasta(organism = "Rattus norvegicus",
+                           output.dir = "/export/valenfs/data/references/Rnor_6.0_rat",
+                           phix = TRUE, ncRNA = "rat",
+                           tRNA = "/export/valenfs/data/references/Rnor_6.0_rat/rn6-mature-tRNAs.fa",
+                           rRNA = "/export/valenfs/data/references/rrna/SILVA_119_bothSURef.fasta")
+# Custome contaminant genomes:
+star.path <- install.STAR()
+trimmer.path <- ORFikPipeline:::install.fastp()
+index <- STAR.index(annotations, STAR = star.path)
+
+### RNA-seq alignment
+# Libraries downloaded from uninett filesender (fix your files here and put them somewhere):
+input.dir.rna <- "/export/valenfs/data/raw_data/RNA-Seq/Preeti_Jain_2020_Rattus_norvegicus"
+output.dir.rna <- "/export/valenfs/data/processed_data/RNA-seq/Preeti_Jain_2020_Rattus_norvegicus/"
+STAR.align.folder(input.dir.rna, output.dir.rna, index,
+                  star.path, fastp = NULL, paired.end = "yes",
+                  steps = "all", adapter.sequence = "TGGAATTCTCGGGTGCCAAGG",
+                  max.cpus = 90, trim.front = 3, min.length = 20)
+
+### Ribo-seq alignment
+input.dir.rfp <- "/export/valenfs/data/raw_data/Ribo-Seq/Preeti_Jain_2020_Rattus_norvegicus/"
+output.dir.rfp <- "/export/valenfs/data/processed_data/Ribo-seq/Preeti_Jain_2020_Rattus_norvegicus/"
+STAR.align.folder(input.dir.rfp, output.dir.rfp, index,
+                  star.path, fastp = NULL, paired.end = "no",
+                  steps = "all", adapter.sequence = "TGGAATTCTCGGGTGCCAAGG",
+                  max.cpus = 90, trim.front = 0, min.length = 20)
+
+txdb_file <- paste0(paths["gtf"], ".db")
+fa <- paths["genome"]
+#¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤#
+# Create ORFik experiments of libraries
+#¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤#
+output.dir.aligned <- paste0(output.dir, "/aligned/")
+create.experimentl(exper = "Preeti_RFP",
+                   dir = "/export/valenfs/data/processed_data/Ribo-seq/Preeti_Jain_2020_Rattus_norvegicus/aligned",
+                   txdb = txdb_file, fa = fa)
+
+
+create.experimentl(exper = "Preeti_RNA",
+                   dir = "/export/valenfs/data/processed_data/RNA-seq/Preeti_Jain_2020_Rattus_norvegicus/aligned",
+                   txdb = txdb_file, fa = fa, pairedEndBam = c(F, rep(T, 5)))
+# Fix columns manually in Libre office if needed
+
+#¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤#
+# QC report (RNA-seq & Ribo-seq)
+#¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤#
+df.rfp <- read.experimentl("Preeti_RFP")
+ORFik::QCreport(df.rfp)
+
+df.rna <- read.experimentl("Preeti_RNA")
+ORFik::QCreport(df.rna)
+
+#¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤#
+# P-shifting
+#¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤#
+shiftFootprintsByExperiment(df.rfp, output_format = c("bedo", "bed"), accepted.lengths = 27:29)
+#¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤#
+# Heatmap validation of P-shifting
+#¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤#
+outputLibs(df.rfp, type = "pshifted")
+heatMapRegion(df.rfp, region = "TIS", acceptedLengths = NULL, scores = "transcriptNormalized")
+
+
+
+a <- fread(cmd = "awk '{ print length }' /export/valenfs/data/raw_data/RNA-Seq/Preeti_Jain_2020_Rattus_norvegicus/test2.fastq")
+if ((nrow(a) %% 4) != 0) stop("File is not moduls 4 rows, malformed!")
+a$type = rep(c("header", "bases", "sep", "quality"), nrow(a)/4)
+b <- data.table(header = a[type == "header"]$V1,
+                bases = a[type == "bases"]$V1,
+                sep = a[type == "sep"]$V1,
+                quality = a[type == "quality"]$V1)
+if (!all(b$sep == 1)) stop("+ row are not all length 1!")
+wrong <- round(sum(b$bases != b$quality) / nrow(b), 3)*100
+if (wrong != 0) stop(paste("length of bases and quality scores are not equal!, wrong:",  wrong, "%"))
+
+aa <- fread(cmd = "awk '{ print length }' /export/valenfs/data/raw_data/RNA-Seq/Preeti_Jain_2020_Rattus_norvegicus/test.fastq")
+aa$type = rep(c("header", "bases", "sep", "quality"), nrow(aa)/4)
+
+bb <- data.table(header = aa[type == "header"]$V1,
+                 bases = aa[type == "bases"]$V1,
+                 sep = aa[type == "sep"]$V1,
+                 quality = aa[type == "quality"]$V1)
+all(bb$bases == bb$quality)
+
+
+# Full mrna meta coverage
+outputLibs(df.rna, type = "default")
+names <- bamVarName(df.rna)
+coverage <- data.table()
+for (f in names) {
+  temp <- ORFik:::windowPerTranscript(df.rna, reads = get(f), splitIn3 = FALSE, fraction = f)
+  coverage <- rbindlist(list(coverage, temp))
+}
+windowCoveragePlot(coverage, colors = "skyblue4")
+windowCoveragePlot(coverage, colors = "skyblue4", scoring = "sum")

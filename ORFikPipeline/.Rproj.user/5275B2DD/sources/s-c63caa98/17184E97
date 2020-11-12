@@ -1,0 +1,25 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1600881107379.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "17184E97",
+    "lastKnownWriteTime" : 1600880891,
+    "last_content_update" : 1600880891,
+    "path" : "/export/valenfs/projects/uORFome/RCode1/ORFikPipeline/R/edfClass.R",
+    "project_path" : "R/edfClass.R",
+    "properties" : {
+        "cursorPosition" : "83,1",
+        "scrollLine" : "62"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 4,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

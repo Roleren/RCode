@@ -1,0 +1,287 @@
+#' Create STAR genome index
+#'
+#' Used as reference when aligning data \cr
+#' Get genome and gtf by running getGenomeAndFasta()
+#'
+#' Can only run on unix systems with installed STAR
+#' @param arguments a named character vector containing paths wanted to
+#' use for index creation. They must be named correctly, see example.
+#' @param output.dir directory to save indices
+#' @param STAR path to STAR, default (NULL), if you don't have STAR,
+#' use: ORFik:::install.STAR
+#' @param phix default NULL, else a path to phix fast file,
+#' Phix is used in Illumina sequencers for sequencing quality control
+#' @param rrna default NULL, else a path to rrna fast file
+#' @param trna default NULL, else a path to trna fast file
+#' @param ncrna default NULL, else a path to ncrna fast file
+#' @param max.cpus 90, number of threads to use
+#' @param script location of STAR script
+#' @return output.dir, can be used as as input for STAR.align..
+#' @family STAR
+#' @export
+#' @examples
+#' # In this argument specify the one you want
+#' #arguments <- c(path.GTF, path.genome, path.phix, path.rrna, path.trna, path.ncrna)
+#' #names(arguments) <- c("gtf", "genome", "phix", "rRNA", "tRNA","ncRNA")
+#' #STAR.index(arguments, "output.dir")
+STAR.index <- function(arguments, output.dir, STAR = NULL,
+                       script = "/export/valenfs/projects/Pipelines/STAR_Aligner/STAR_MAKE_INDEX.sh") {
+  if (!file.exists(script)) stop("STAR index script not found, check path of script!")
+  if (is.null(names(arguments))) stop("arguments must have names, see ?STAR.index")
+  finder <- function(this, args, ext) {
+    if (!(this %in% names(args))) return("")
+    index <- which(this %in% names(args))
+    return(paste(ext, ))
+  }
+  exts <- c("p", "r", "t", "n", "g", "f")
+  thiss <- c("gtf", "genome", "phix", "rRNA", "tRNA","ncRNA")
+  hits <- lapply(thiss, finder(x, arguments, exts))
+  hits <- unlist(hits, use.names = FALSE)
+
+  phix <- ifelse(is.null(phix), "", paste("-p", phix))
+  rrna <- ifelse(is.null(rrna), "", paste("-r", rrna))
+  trna <- ifelse(is.null(trna), "", paste("-t", trna))
+  ncrna <- ifelse(is.null(ncrna), "", paste("-n", ncrna))
+  GTF <- paste("-g", GTF)
+  genome <- paste("-f", genome)
+
+  STAR <- ifelse(is.null(STAR), "", paste("-S", STAR))
+  out <- paste("-o", output.dir)
+  full <- paste(script, out, GTF, genome, phix, rrna, trna, ncrna, STAR)
+  message("STAR indexing:\n")
+  print(full); print("\n")
+  if (.Platform$OS.type == "unix") {
+    message("Starting indexing at time:")
+    print(Sys.time())
+    out <- system(command = full)
+    out <- ifelse(out == 0, "Index done", "Index process failed!")
+    message(out)
+  } else stop("STAR is not supported on windows!")
+  return(output.dir)
+}
+
+#' Align all libraries in folder with STAR
+#'
+#' Does either all files as paired end or single end,
+#' so if you have mix, split them in two different folders.
+#' @param input.dir path to fast files to align
+#' @param index.dir path to STAR index
+#' @param fastp path to fastp trimmer
+#' @param paired.end default "no", alternative "yes". Will auto detect
+#'  pairs by names.
+#' @param steps steps of depletion and alignment wanted:
+#'  (a string: which steps to do? (default: "tr-ge", write "all" to get all: "tr-ph-rR-nc-tR-ge")
+#'  tr: trim, ph: phix, rR: rrna, nc: ncrna, tR: trna, ge: genome)
+#'  Write your wanted steps, seperated by "-". Order does not matter.
+#'  To just do trim and alignment to genome write -s "tr-ge"
+#' @param adapter.sequence "auto"
+#' @param min.length 15
+#' @param trim.front default 3 bases
+#' @param alignment.type "Local", alternative "EndToEnd" (global)
+#' @param max.cpus 90, number of threads to use
+#' @param include.subfolders "n" (no), do recursive search downwards for fast files.
+#' @inheritParams STAR.index
+#' @return output.dir, can be used as as input in ORFik::create.experiment
+#' @family STAR
+#' @export
+STAR.align.folder <- function(input.dir, output.dir, index.dir,
+                              STAR = NULL, fastp = NULL, paired.end = "no",
+                              steps = "tr-ge", adapter.sequence = "auto",
+                              min.length = 15, trim.front = 3,
+                              alignment.type = "Local", max.cpus = 90,
+                              include.subfolders = "n",
+                              script = "/export/valenfs/projects/Pipelines/STAR_Aligner/RNA_Align_pipeline_folder.sh") {
+  if (!file.exists(script)) stop("STAR alignment script not found, check path of script!")
+  STAR <- ifelse(is.null(STAR), "", paste("-S", STAR))
+
+  full <- paste(script, "-f", input.dir, "-o", output.dir, "-p", paired.end,
+                "-l", min.length, "-g", index.dir, "-s", steps,
+                "-a", adapter.sequence, "-t", trim.front,
+                "-A", alignment.type, "-m", max.cpus, "-i", include.subfolders,
+                STAR)
+  print(full)
+  if (.Platform$OS.type == "unix") {
+    message("Starting alignment at time:")
+    print(Sys.time())
+    out <- system(command = full)
+    out <- ifelse(out == 0, "Alignment done", "Alignment process failed!")
+    message(out)
+  } else stop("STAR is not supported on windows!")
+  return(output.dir)
+}
+
+#' Align single or paired end pair with STAR
+#'
+#' If you want more than two files do:
+#' @inheritParams STAR.align.folder
+#' @param file1 library file, if paired must be R1 file
+#' @param file2 default NULL, set if paired end to R2 file
+#' @family STAR
+#' @export
+STAR.align.single <- function(file1, file2 = NULL, output.dir, index.dir,
+                              STAR = NULL, fastp = NULL,
+                              steps = "tr-ge", adapter.sequence = "auto",
+                              min.length = 15, trim.front = 3,
+                              alignment.type = "Local", max.cpus = 90,
+                              script = "/export/valenfs/projects/Pipelines/STAR_Aligner/RNA_Align_pipeline.sh"
+) {
+  if (!file.exists(script)) stop("STAR alignment script not found, check path of script!")
+  file2 <- ifelse(is.null(file2), "", paste("-F", file2))
+  STAR <- ifelse(is.null(STAR), "", paste("-S", STAR))
+
+  full <- paste(script, "-f", file1, file2, "-o", output.dir,
+                "-l", min.length, "-g", index.dir, "-s", steps,
+                "-a", adapter.sequence, "-t", trim.front,
+                "-A", alignment.type, "-m", max.cpus, STAR)
+  print(full)
+  if (.Platform$OS.type == "unix") {
+    message("Starting alignment at time:")
+    print(Sys.time())
+    out <- system(command = full)
+    out <- ifelse(out == 0, "Alignment done", "Alignment process failed!")
+    message(out)
+  } else stop("STAR is not supported on windows!")
+  return(output.dir)
+}
+
+# STAR.merge.tcp <- function(input.dir) {
+#   dir.create(paste0(input.dir, "/merged"))
+#   system("samtools --help")
+# }
+
+#' Download genome (fasta) and GTF
+#'
+#' Will create a R transcript database (TxDb object) from the genome. \cr
+#' It will also index the genome \cr
+#' If you misspelled something, you need to set what you already download to FALSE
+#' @param organism scientific name of organism
+#' @param output.folder folder to save downloaded data
+#' @param db database to use, default adviced: "ensembl"
+#' @param GTF logical, default: TRUE, download gtf of organism
+#' @param genome logical, default: TRUE, download genome of organism
+#' @param fasta path to genome fast file
+#' @param phix logical, default FALSE, download phix sequence to filter out with.
+#' Only use if illumina sequencing. Phix is used in Illumina sequencers for
+#' sequencing quality control
+#' @param ncRNA chatacter, default "" (no download), if not "" it must be a character vector
+#' of species common name (not scientific) Homo sapiens is human, Rattus norwegicus is rat etc,
+#' download ncRNA sequence to filter out with. From NONCODE online server, if you cant find
+#' common name see: http://www.noncode.org/download.php/
+#' @param gunzip logical, default TRUE, uncompress downloaded files
+#' that are zipped as default
+#' @param remake logical, default: FALSE, if TRUE remake everything specified
+#' @importFrom biomartr getGTF
+#' @importFrom biomartr getGenome
+#' @importFrom R.utils gunzip
+#' @importFrom utils download.file
+#' @return a character vector of genomeas and gtf downloaded
+#' @family STAR
+#' @export
+getGenomeAndFasta <- function(organism, output.dir, db = "ensembl",
+                              GTF = TRUE, genome = TRUE, phix = FALSE,
+                              ncRNA = FALSE, gunzip = TRUE, remake = FALSE) {
+  finished.file <- paste0(output.dir, "/outputs.rds")
+  if (file.exists(finished.file)) return(readRDS(finished.file))
+
+  dir.create(output.dir, recursive = TRUE)
+  if (ncRNA != FALSE) {
+    message("Downloading ncRNA's")
+    file <- "wget http://www.noncode.org/datadownload/NONCODEv5_"
+    org <- ncRNA
+    extension <- ".fa.gz"
+    out <- paste0(output.dir, "/NONCODE_ncRNA_",org, extension)
+    value <- download.file(paste0(file, org, extension), destfile =  out,
+                           mode = "auto")
+    ncRNA <- grep(pattern = "NONCODE_ncRNA_",
+                  x = list.files(output.dir, full.names = TRUE),
+                  value = TRUE)
+    if (value > 0 | length(ncRNA) == 0) {
+      ncRNA <- "FAILED"
+      warning("ncRNA download failed, wrong ncRNA species name, check NONCODE")
+    }
+  }
+
+  if (genome) { # fasta genome of organism
+    fa  <- biomartr::getGenome(db = db, organism, path = output.dir, gunzip = gunzip)
+    indexFa(fa)
+  } else { # check if it already exists
+    fa <- grep(pattern = organism,
+                  x = list.files(output.dir, full.names = TRUE),
+                  value = TRUE)
+    fa <- grep(pattern = "\\.fa", x = fa, value = TRUE)
+    fa <- grep(pattern = "\\.fai", x = fa, value = TRUE, invert = TRUE)
+    if (length(fa) != 1) fa <- FALSE
+  }
+  if (GTF) { # gtf of organism
+    gtf <- biomartr::getGTF(   db = db, organism, path = output.dir)
+    if (gunzip) # unzip gtf file
+      gtf <- R.utils::gunzip(gtf, overwrite = TRUE)
+    txdb <- GenomicFeatures::makeTxDbFromGFF(gtf, organism = organism)
+    if (genome)
+      seqlevelsStyle(txdb) <- seqlevelsStyle(FaFile(fa))[1]
+    txdb_file <- paste0(gtf, ".db")
+    saveDb(txdb, txdb_file)
+  } else gtf <- FALSE
+  if (phix) {
+    message("Downloading phix genome")
+    phix <- biomartr::getGenome(db = "refseq", "Escherichia virus phiX174",
+                                path = output.dir, gunzip = gunzip)
+  }
+
+  message("All data downloaded and ready at:")
+  message(output.dir)
+  output <- c(gtf, fa, phix, ncRNA)
+  names(output) <- c("gtf", "genome", "phix", "ncRNA")
+  saveRDS(object = output, finished.file)
+  return(output)
+}
+
+#' Download and prepare STAR
+#'
+#' Will not run "make", only use precompiled STAR file.\cr
+#' Only works for Linux and Mac (unix systems)
+#' @param folder path to folder for download, fille will be named
+#' "STAR-version", where version is version wanted.
+#' @param version default "2.7.4a"
+#' @importFrom utils download.file
+#' @importFrom utils tar
+#' @return path to runnable STAR
+#' @export
+#' @examples
+#' #install.STAR("~/bin", )
+install.STAR <- function(folder = "~/bin", version = "2.7.4a") {
+  if (.Platform$OS.type != "unix")
+    stop("STAR does not work on Windows, try RSubread")
+  url <- paste0("https://github.com/alexdobin/STAR/archive/",
+                version,".tar.gz")
+  folder <- path.expand(folder)
+  path <- paste0(folder, "/STAR-", version)
+  pathgz <- paste0(path, ".tar.gz")
+  os <- Sys.info()
+  bin <- ifelse(os[1] == "Linux",
+                paste0(path, "/bin/Linux_x86_64/STAR"),
+                paste0(path, "/bin/MacOSX_x86_64/STAR"))
+  names(bin) <- "STAR"
+  if (file.exists(bin)) {
+    message("STAR exists at folder given already, skipping download")
+    return(bin)
+  }
+
+  utils::download.file(url, destfile = pathgz)
+  untar(pathgz, exdir = folder)
+  return(bin)
+}
+
+install.fastp <- function(folder = "~/bin") {
+  if (.Platform$OS.type != "unix")
+    stop("fastp does not work on Windows, try RSubread")
+  url <- "http://opengene.org/fastp/fastp"
+  path <- paste0(folder, "/fastp")
+  if (file.exists(bin)) {
+    message("fastp exists at folder given already, skipping download")
+    return(path)
+  }
+
+  utils::download.file(url, destfile = path)
+  return(path)
+}

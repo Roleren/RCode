@@ -1,0 +1,25 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1583411084117.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "A09A4C0C",
+    "lastKnownWriteTime" : 1559296817,
+    "last_content_update" : 1559296817,
+    "path" : "/export/valenfs/projects/uORFome/RCode1/uORFomePipe/R/experiment.R",
+    "project_path" : "R/experiment.R",
+    "properties" : {
+        "cursorPosition" : "79,14",
+        "scrollLine" : "66"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 7,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

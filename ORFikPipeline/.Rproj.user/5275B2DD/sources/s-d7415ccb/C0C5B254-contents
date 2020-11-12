@@ -1,0 +1,7 @@
+
+index.Rsubread <- function() {
+  library(Rsubread)
+  dir.create("/export/valenfs/data/references/Rnor_6.0_rat/Rsubread-index/", recursive = TRUE)
+  Rsubread::buildindex(basename = "/export/valenfs/data/references/Rnor_6.0_rat/Rsubread-index/test_index", 
+                       reference = "/export/valenfs/data/references/Rnor_6.0_rat/Rattus_norvegicus.Rnor_6.0.dna.toplevel.fa")
+}

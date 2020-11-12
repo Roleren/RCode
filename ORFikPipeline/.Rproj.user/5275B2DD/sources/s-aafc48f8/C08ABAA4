@@ -1,0 +1,25 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1590519037080.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "C08ABAA4",
+    "lastKnownWriteTime" : 1589287331,
+    "last_content_update" : 1589287331,
+    "path" : "/export/valenfs/projects/Hakon/ORFik_paper/ORFikPaper.R",
+    "project_path" : null,
+    "properties" : {
+        "cursorPosition" : "112,0",
+        "scrollLine" : "0"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 3,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

@@ -1,0 +1,37 @@
+library(ORFikPipeline); library(uORFomePipe)
+
+{ # This part will vary according to what your experiments looks like, here I pick 3 stages to use
+  # Load experiments
+  df.cage <- read.experimentl("zf_nepal")
+  df.rfp  <- read.experimentl("zf_baz14_RFP") # RNA-seq is optional, but makes results better
+  df.rna  <- read.experimentl("zf_baz14_RNA")
+  # Subset experiments to stages / tissues we want analysed (they must exist in all 3)
+  conditions <- c("", NA) # Only empty conditions allowed (no mutants etc.)
+  stages <- c("64Cell","Somite", "24hpf", "prim6", "48hpf", "prim20") # 3 stages (we make 2to4 and fertilzed as 1 stage)
+  df.rfp <- df.rfp[df.rfp$stage %in% stages & df.rfp$condition %in% conditions,]
+  df.rna <- df.rna[df.rna$stage %in% stages & df.rna$condition %in% conditions,]
+  df.cage <- df.cage[df.cage$stage %in% stages & df.cage$condition %in% conditions,]
+  df.cage[4,2] <- df.rna$stage[3]; df.cage[5:6,2] <- df.rna$stage[4]
+
+
+  orfikDirs(mainPath = "/export/valenfs/projects/Hakon/uORFome_zebrafish_bazzini",
+            df.rfp, df.rna, df.cage,
+            organism = "Danio rerio") # <- scientific name for organism, will let you know if you misspelled
+}
+
+tx <- loadRegion(df.rfp, part = "mrna")
+ssu <- fimport("/export/valenfs/data/processed_data/TCP-seq/valen_2019_zebrafish_15_trim3_15nt_tRNAscan/aligned_GRCz10_tidy_tRNA_multi/merged/SSU_merged_fractions_12_13_14.bam")
+
+seqFeatures <- getAllSequenceFeaturesTable()
+prediction <- predictUorfs()
+seqFeatures[, pred := prediction$prediction]; seqFeatures[, index := 1:nrow(seqFeatures)]
+
+preds <- seqFeatures[pred == 1 & StartCodons == "ATG",]
+grl <- uORFomePipe:::getUorfsInDb()
+distTss <- distToTSS(grl, tx)
+uORFs <- grl[preds$index & distTss > 52]
+
+ssud <- convertToOneBasedRanges(ssu, "5prime", TRUE, TRUE)
+ssud <-
+heatMap_single(uORFs, tx, ssud, outdir = "/export/valenfs/projects/uORFome/RCode1/Preeti_Riboseq/heatmap_uORFs.png", scores = "transcriptNormalized", upstream = 50, downstream = 50, zeroPosition = 50)
+

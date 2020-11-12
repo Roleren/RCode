@@ -1,0 +1,25 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1592215728675.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "10F76375",
+    "lastKnownWriteTime" : 1592215873,
+    "last_content_update" : 1592215873735,
+    "path" : "/export/valenfs/projects/Hakon/Preeti_rat/test_ssu_on_uorf.R",
+    "project_path" : null,
+    "properties" : {
+        "cursorPosition" : "31,0",
+        "scrollLine" : "9"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 4,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

@@ -1,0 +1,69 @@
+#¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤#
+# INFO
+#¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤#
+# Analysis data of Ribo-seq made by Preeti, May 2020
+rm(list=ls())
+library(ORFikPipeline)
+df <- read.experimentl("Preeti_RFP")
+df.rna <- read.experimentl("Preeti_RNA")
+#devtools::document(pkg = "/export/valenfs/projects/uORFome/RCode1/ORFikPipeline/")
+#¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤#
+# P-shifting
+#¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤#
+shiftFootprintsByExperiment(df, output_format = "bedo", accepted.lengths = 24:27)
+
+#¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤#
+# Heatmaps
+#¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤#
+outputLibs(df, type = "pshifted")
+heatMapRegion(df, region = "TIS", acLen = NULL, scores = "transcriptNormalized")
+
+#¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤#
+# FOLD change
+#¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤#
+library(DESeq2)
+rfp <- countTable(df, region = "cds", type = "summarized")[,3:6]
+rna <- countTable(df.rna, region = "cds", type = "summarized")[,2:5]
+merged <- SummarizedExperiment(assays = cbind(assay(rfp), assay(rna)),
+                                colData = rbind(colData(rfp), colData(rna)))
+colData(merged) <- cbind(RNA = c(rep("P", nrow(colData(rfp))), rep("T", nrow(colData(rna)))), colData(merged))
+colData(merged) <- cbind(colData(merged), treatment = gsub("RNA_|RFP_", "", colData(merged)$SAMPLE))
+colData(merged) <-cbind(colData(merged), samplePairs = paste0(colData(merged)$treatment,colData(merged)$replicate))
+ano <- anota2seqDataSetFromSE(merged, dataType = "RNAseq")
+res <- DESeq(rfp)
+plotMA(results(res))
+te <- (rfp + 1) / (rna + 1)
+
+convertLog2 <- function(col) {
+  coll <- col
+  col[(col > 0)] <- log2(col[(col > 0)])
+  col[(coll < 0)] <- - log2(abs(col[(coll < 0)]))
+  return(col)
+}
+
+lim = 10
+d <- data.table(RFP = melt(rfp), RNA = melt(rna))
+d <- d[, .(RFP.variable, RFP = RFP.value , RNA = RNA.value)]
+
+d[, .(RFP.variable, RFP = convertLog2(RFP), RNA = convertLog2(RNA))]
+
+
+d$cols <- "black"
+means <- d[,.(RNAs = mean(RNA), RFPs = mean(RFP)), by = .(cols, RFP.variable)]
+means$col <- "black"
+p <- ggplot() +
+  geom_point(data = d,aes(x = RNA, y = RFP, alpha = 0.1), color = factor(d$cols)) +
+  ylab(expression("RFP vs RNA "*Delta*"")) +
+  geom_hline(data = means, aes(yintercept =  RFPs, color = col))
+
+p <- p +
+  xlim(-lim, lim) +
+  ylim(-lim, lim) +
+  xlab(expression("WT vs MZ dicer "*Delta*" mRNA")) +
+  facet_grid( ~ RFP.variable, scales = "free") +
+  geom_vline(data = means, aes(xintercept = RNAs, color = col)) +
+  scale_fill_manual(values = c("gray", "red"),
+                    name = "", aesthetics = "cols") +
+  scale_fill_manual(values = c("black", "red"),
+                    name = "", aesthetics = "col") +
+  theme(legend.position = "none")

@@ -1,0 +1,70 @@
+#¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤#
+# INFO
+#¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤#
+# Pre-Analysis data of Ribo-seq made by Preeti, May 2020
+library(ORFikPipeline)
+
+#¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤#
+# Download annotation (Rnor 6.0)
+#¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤#
+
+biomartr::getGTF(   db = "ensembl", "Rattus norvegicus", path = "/export/valenfs/data/references/Rnor_6.0_rat", gunzip = TRUE)
+biomartr::getGenome(db = "ensembl", "Rattus norvegicus", path = "/export/valenfs/data/references/Rnor_6.0_rat", gunzip = TRUE)
+
+# NONCODE, phiX  and (tRNA scan, dropped) also downloaded
+#biomartr::getGenome(db = "refseq", "Escherichia virus phiX174", path = "/export/valenfs/data/references/phiX", gunzip = TRUE)
+# http://www.noncode.org/download.php 	NONCODEv5_rat.fa.gz
+
+# Create index and txdb object
+gtf <- "/export/valenfs/data/references/Rnor_6.0_rat/Rnor_6.0_genomic_ensembl.gtf"
+fa  <- "/export/valenfs/data/references/Rnor_6.0_rat/Rnor_6.0.dna.toplevel.fa"
+indexFa(fa)
+txdb <- loadTxdb(gtf, chrStyle = seqlevelsStyle(findFa(fa)))
+txdb_file <- paste0(gtf, ".db")
+saveDb(txdb, txdb_file)
+
+#¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤#
+# Create ORFik experiments of libraries
+#¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤#
+# Libraries downloaded from uninett filesender:
+# Now prepare folder on server and do alignment with STAR.....
+create.experimentl(exper = "Preeti_RFP",
+                   dir = "/export/valenfs/data/processed_data/Ribo-seq/Preeti_Jain_2020_Rattus_norvegicus/aligned",
+                   txdb = txdb_file, fa = fa)
+
+
+create.experimentl(exper = "Preeti_RNA",
+                   dir = "/export/valenfs/data/processed_data/RNA-seq/Preeti_Jain_2020_Rattus_norvegicus/aligned",
+                   txdb = txdb_file, fa = fa)
+# Fix columns manually in Libre office if needed
+
+#¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤#
+# QC report (RNA-seq & Ribo-seq)
+#¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤#
+df.rfp <- read.experimentl("Preeti_RFP")
+ORFik::ORFikQC(df.rfp)
+
+df.rna <- read.experimentl("Preeti_RNA")
+ORFik::ORFikQC(df.rna)
+
+
+
+
+
+
+
+
+
+
+
+
+# Full mrna meta coverage
+outputLibs(df.rna, type = "default")
+names <- bamVarName(df.rna)
+coverage <- data.table()
+for (f in names) {
+  temp <- ORFik:::windowPerTranscript(df.rna, reads = get(f), splitIn3 = FALSE, fraction = f)
+  coverage <- rbindlist(list(coverage, temp))
+}
+windowCoveragePlot(coverage, colors = "skyblue4")
+windowCoveragePlot(coverage, colors = "skyblue4", scoring = "sum")
